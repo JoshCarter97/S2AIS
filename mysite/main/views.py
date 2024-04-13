@@ -6,65 +6,110 @@ from .forms import CreateListForm
 from django.core.files.storage import default_storage
 from django.http import JsonResponse
 
+import sys
+sys.path.insert(0, 'C:/Users/jc2369/PycharmProjects/BathHack24/mysite/main')
+import Combined_Processing_Pipeline
+
+
 # Create your views here.
 
 def index(request, id):
-	ls = ToDoList.objects.get(id=id)
+    ls = ToDoList.objects.get(id=id)
 
-	if request.method == "POST":
-		if request.POST.get("save"):
-			for item in ls.item_set.all():
-				p = request.POST
-				
-				if "clicked" == p.get("c"+str(item.id)):
-					item.complete = True
-				else:
-					item.complete = False
+    if request.method == "POST":
+        if request.POST.get("save"):
+            for item in ls.item_set.all():
+                p = request.POST
 
-				if "text" + str(item.id) in p:
-					item.text = p.get("text" + str(item.id))
+                if "clicked" == p.get("c" + str(item.id)):
+                    item.complete = True
+                else:
+                    item.complete = False
 
+                if "text" + str(item.id) in p:
+                    item.text = p.get("text" + str(item.id))
 
-				item.save()
+                item.save()
 
-		elif request.POST.get("add"):
-			newItem = request.POST.get("new")
-			if newItem != "":
-				ls.item_set.create(text=newItem, complete=False)
-			else:
-				print("invalid")
+        elif request.POST.get("add"):
+            newItem = request.POST.get("new")
+            if newItem != "":
+                ls.item_set.create(text=newItem, complete=False)
+            else:
+                print("invalid")
 
-	return render(request, "main/index.html", {"ls": ls})
+    return render(request, "main/index.html", {"ls": ls})
 
 
 def get_name(request):
-	if request.method == "POST":
-		form = CreateListForm(request.POST)
+    if request.method == "POST":
+        form = CreateListForm(request.POST)
 
-		if form.is_valid():
-			n = form.cleaned_data["name"]
-			t = ToDoList(name=n, date=timezone.now())
-			t.save()
-			
-			return HttpResponseRedirect("/%i" %t.id)
+        if form.is_valid():
+            n = form.cleaned_data["name"]
+            t = ToDoList(name=n, date=timezone.now())
+            t.save()
 
-	else:
-		form = CreateListForm()
+            return HttpResponseRedirect("/%i" % t.id)
 
-	return render(request, "main/create.html", {"form": form})
+    else:
+        form = CreateListForm()
+
+    return render(request, "main/create.html", {"form": form})
 
 
 def home(request):
-	return render(request, "main/home.html", {})
+    return render(request, "main/home.html", {})
 
 
 def view(request):
-	l = ToDoList.objects.all()
-	return render(request, "main/view.html", {"lists":l})
+    l = ToDoList.objects.all()
+    return render(request, "main/view.html", {"lists": l})
+
 
 def upload_file(request):
     if request.method == 'POST':
         file = request.FILES['audio_file']
         file_name = default_storage.save(file.name, file)
-        return JsonResponse({'status': 'success'})
 
+        # Return the file name in the JsonResponse
+        return JsonResponse({'status': 'success', 'file_name': file_name})
+
+
+def SpeechtoText(file_name):
+
+    file_path = f"media/{file_name}"
+
+    # Process the audio file and get the transcribed text
+    transcribed_text = Combined_Processing_Pipeline.SpeechToText([file_path])
+
+    return transcribed_text
+
+def TexttoAI(transcribed_text):
+
+    save_path = "media/ai_audio_output.wav"
+
+    Combined_Processing_Pipeline.TextToAIAudio(transcribed_text, save_path)
+
+    return save_path
+
+
+def generate_ai_audio(transcribed_text):
+    print("started generating AI audio")
+    # Process the transcribed text and get the AI generated audio file
+    output_wav_path = TexttoAI(transcribed_text)
+    print(f"AI audio generated successfully. Path: {output_wav_path}")
+    yield JsonResponse({'status': 'success', 'message': 'AI audio generated successfully.'})
+
+def process_audio(request):
+    if request.method == 'POST':
+        file_name = request.POST.get('file_name')
+
+    # Process the audio file and get the transcribed text
+    transcribed_text = SpeechtoText(file_name)
+
+    # Return the transcribed text in the JsonResponse
+    response = JsonResponse({'status': 'success', 'transcribed_text': transcribed_text, 'message': 'AI audio generation in progress...'})
+    response.streaming_content = generate_ai_audio(transcribed_text)
+
+    return response

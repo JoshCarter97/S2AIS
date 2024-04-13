@@ -8,13 +8,17 @@ Home
 {% block content %}
 <div style="display: flex;">
     <div style="flex: 1;">
-        <h3>Upload an audio file of you speaking below. This audio file will first be transcribed to text and the text will then be used to generate an AI version of your audio!</h3>
+        <h3>Upload an audio file of you speaking below. This audio file will first be transcribed to text and the text
+            will then be used to generate an AI version of your audio!</h3>
         <form id="upload-form" action="/upload/" method="post" enctype="multipart/form-data">
             {% csrf_token %}
             <input type="file" name="audio_file">
             <input type="submit" value="Upload">
         </form>
         <div id="upload-status"></div>
+        <p id="transcript-label" style="font-weight: bold;"></p>
+        <div id="transcribed-text"></div>
+        <div id="AI-audio-status"></div>
     </div>
     <div style="flex: 1; padding-left: 20px">
         <img src="https://th.bing.com/th/id/OIG1.xKpWERrcthUQ6N8iqNFx?pid=ImgGn" alt="Home Image" style="width: 100%;">
@@ -23,27 +27,53 @@ Home
 
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 <script>
-$(document).ready(function() {
-    $('#upload-form').on('submit', function(e) {
-        e.preventDefault();
+    $('#upload-form').on('submit', function (event) {
+        event.preventDefault();
         var formData = new FormData(this);
         $.ajax({
-            url: '/upload/',
+            url: '/upload_file/',
             type: 'POST',
             data: formData,
-            success: function(response) {
-                $('#upload-status').html('File uploaded successfully');
-                // Add code here to update the page based on the response from the server
-            },
-            error: function(response) {
-                $('#upload-status').html('File upload failed');
+            success: function (data) {
+                if (data.status === 'success') {
+                    $('#upload-status').text('File uploaded successfully. Processing...');
+                    $.ajax({
+                        url: '/process_audio/',
+                        type: 'POST',
+                        data: {'file_name': data.file_name},
+                        beforeSend: function(xhr, settings) {
+                            xhr.setRequestHeader("X-CSRFToken", getCookie('csrftoken'));
+                        },
+                        success: function (data) {
+                            if (data.status === 'success') {
+                                $('#transcript-label').html('<br>Your transcript:<br>');
+                                $('#transcribed-text').text(data.transcribed_text);
+                                $('#AI-audio-status').html('<br>' + data.message + '<br>');
+                            }
+                        }
+                    });
+                }
             },
             cache: false,
             contentType: false,
             processData: false
         });
     });
-});
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
 </script>
 {% endblock %}
 

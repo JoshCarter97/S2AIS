@@ -113,13 +113,9 @@ def TextToAIAudio(text_string, save_path, voice_preset="v2/en_speaker_6"):
 
 # test the full pipeline
 # output = SpeechToText(["louder_test.wav"])
+# output = "Hey, have you heard about this new text-to-audio model called Bark? Apparently, it's the most realistic and natural-sounding text-to-audio model out there right now. People are saying it sounds just like a real person speaking. I think it uses advanced machine learning algorithms to analyze and understand the nuances of human speech, and then replicates those nuances in its own speech output."
+# TextToAIAudio(output, "../../bark_out_small.wav")
 
-output = "Hey, have you heard about this new text-to-audio model called Bark? Apparently, it's the most realistic and natural-sounding text-to-audio model out there right now. People are saying it sounds just like a real person speaking. I think it uses advanced machine learning algorithms to analyze and understand the nuances of human speech, and then replicates those nuances in its own speech output."
-
-TextToAIAudio(output, "bark_out_small.wav")
-
-
-print()
 
 
 
