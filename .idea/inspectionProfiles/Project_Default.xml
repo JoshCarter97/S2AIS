@@ -1,0 +1,29 @@
+<component name="InspectionProjectProfileManager">
+  <profile version="1.0">
+    <option name="myName" value="Project Default" />
+    <inspection_tool class="PyPep8Inspection" enabled="true" level="WEAK WARNING" enabled_by_default="true">
+      <option name="ignoredErrors">
+        <list>
+          <option value="E101" />
+          <option value="W191" />
+        </list>
+      </option>
+    </inspection_tool>
+    <inspection_tool class="PyTupleAssignmentBalanceInspection" enabled="false" level="WARNING" enabled_by_default="false" />
+    <inspection_tool class="PyUnresolvedReferencesInspection" enabled="true" level="WARNING" enabled_by_default="true">
+      <option name="ignoredIdentifiers">
+        <list>
+          <option value="list.*" />
+          <option value="System_Comparison.*" />
+          <option value="Process_Force_Data" />
+          <option value="FSR_early_analysis" />
+          <option value="Data_Loading" />
+          <option value="Extract_Qualisys" />
+          <option value="data_plotter" />
+          <option value="Process_GRF" />
+          <option value="src.treadmill_processing.Full_Running_Processing.treadmill_processing" />
+        </list>
+      </option>
+    </inspection_tool>
+  </profile>
+</component>
