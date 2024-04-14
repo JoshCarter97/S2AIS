@@ -6,6 +6,7 @@ from .forms import CreateListForm
 from django.core.files.storage import default_storage
 from django.http import JsonResponse
 from django.http import StreamingHttpResponse
+from django.views.decorators.csrf import csrf_exempt
 
 import sys
 sys.path.insert(0, 'C:/Users/jc2369/PycharmProjects/BathHack24/mysite/main')
@@ -60,9 +61,20 @@ def get_name(request):
     return render(request, "main/create.html", {"form": form})
 
 
-def home(request):
-    return render(request, "main/home.html", {})
+def upload(request):
+    return render(request, "main/upload.html", {})
 
+def record(request):
+    return render(request, "main/record.html", {})
+
+@csrf_exempt
+def upload_audio(request):
+    if request.method == 'POST':
+        audio_file = request.FILES['audio_file']
+        # Save the audio file here...
+        return JsonResponse({'status': 'success'})
+    else:
+        return JsonResponse({'status': 'error'})
 
 def view(request):
     l = ToDoList.objects.all()
@@ -74,10 +86,12 @@ def upload_file(request):
         file = request.FILES['audio_file']
         file_name = default_storage.save(file.name, file)
 
-        print(file_name)
-
         # Return the file name in the JsonResponse
         return JsonResponse({'status': 'success', 'file_name': file_name})
+
+    elif request.method == 'GET':
+        # Return a simple HttpResponse or render a template
+        return HttpResponse("This is the upload_file view.")
 
 
 def SpeechtoText(file_name):

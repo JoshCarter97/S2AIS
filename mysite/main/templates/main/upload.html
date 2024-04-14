@@ -1,7 +1,7 @@
 {% extends 'main/base.html' %}
 {% block title %}
 {% load static %}
-Home
+Upload
 {% endblock %}
 
 
@@ -59,7 +59,7 @@ Home
                                 var audioPath = data.file_name;
                                 console.log(audioPath);  // Log the path
 
-                                $('#uploaded-audio').attr('src', audioPath);
+                                $('#uploaded-audio').attr('src', '/media/' + audioPath);
                                 $('#transcript-label').html('<br>Your transcript:<br>');
                                 $('#transcribed-text').text(data.transcribed_text);
                                 $('#AI-audio-status').html('<br>' + data.message + '<br>');
@@ -95,7 +95,7 @@ Home
                                 })
                                 .then(result => {
                                     $('#AI-audio-status').html('<br>' + result.message + '<br>');
-                                    $('#ai-audio').attr('src', 'ai_audio_output.wav');
+                                    $('#ai-audio').attr('src', '/media/ai_audio_output.wav');
                                 });
 
                             }, 1000);

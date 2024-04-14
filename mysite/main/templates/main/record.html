@@ -1,0 +1,46 @@
+{% extends 'main/base.html' %}
+{% block title %}
+{% load static %}
+Record
+{% endblock %}
+
+{% block content %}
+<div>
+    <button id="recordButton">Start Recording</button>
+    <audio id="recordedAudio" controls></audio>
+</div>
+
+<script>
+let chunks = [];
+let recorder;
+let mediaStream;
+
+const recordButton = document.getElementById('recordButton');
+const recordedAudio = document.getElementById('recordedAudio');
+
+recordButton.addEventListener('click', function() {
+    if (recorder && recorder.state === "recording") {
+        recorder.stop();
+        recordButton.textContent = 'Start Recording';
+    } else {
+        navigator.mediaDevices.getUserMedia({ audio: true }).then(function(stream) {
+            mediaStream = stream;
+            recorder = new MediaRecorder(stream);
+            recorder.start();
+            recordButton.textContent = 'Stop Recording';
+
+            recorder.ondataavailable = function(e) {
+                chunks.push(e.data);
+            }
+
+            recorder.onstop = function(e) {
+                const blob = new Blob(chunks, { 'type' : 'audio/wav; codecs=opus' });
+                chunks = [];
+                const audioURL = window.URL.createObjectURL(blob);
+                recordedAudio.src = audioURL;
+            }
+        });
+    }
+});
+</script>
+{% endblock %}
