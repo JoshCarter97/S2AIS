@@ -5,10 +5,12 @@ from .models import ToDoList
 from .forms import CreateListForm
 from django.core.files.storage import default_storage
 from django.http import JsonResponse
+from django.http import StreamingHttpResponse
 
 import sys
 sys.path.insert(0, 'C:/Users/jc2369/PycharmProjects/BathHack24/mysite/main')
 import Combined_Processing_Pipeline
+import json
 
 
 # Create your views here.
@@ -72,6 +74,8 @@ def upload_file(request):
         file = request.FILES['audio_file']
         file_name = default_storage.save(file.name, file)
 
+        print(file_name)
+
         # Return the file name in the JsonResponse
         return JsonResponse({'status': 'success', 'file_name': file_name})
 
@@ -94,13 +98,6 @@ def TexttoAI(transcribed_text):
     return save_path
 
 
-def generate_ai_audio(transcribed_text):
-    print("started generating AI audio")
-    # Process the transcribed text and get the AI generated audio file
-    output_wav_path = TexttoAI(transcribed_text)
-    print(f"AI audio generated successfully. Path: {output_wav_path}")
-    yield JsonResponse({'status': 'success', 'message': 'AI audio generated successfully.'})
-
 def process_audio(request):
     if request.method == 'POST':
         file_name = request.POST.get('file_name')
@@ -109,7 +106,32 @@ def process_audio(request):
     transcribed_text = SpeechtoText(file_name)
 
     # Return the transcribed text in the JsonResponse
-    response = JsonResponse({'status': 'success', 'transcribed_text': transcribed_text, 'message': 'AI audio generation in progress...'})
-    response.streaming_content = generate_ai_audio(transcribed_text)
+    response = JsonResponse({'status': 'success', 'transcribed_text': transcribed_text, 'message': 'AI audio generation in progress...',
+                             'file_name': file_name})
 
     return response
+
+def generate_ai_audio(request):
+    if request.method == 'POST':
+        transcribed_text = request.POST.get('transcribed_text')
+
+        print(f"--> Transcribed text: {transcribed_text}")
+
+        if transcribed_text is None:
+            return JsonResponse({'status': 'error', 'message': 'No transcribed text found in the request.'})
+
+        # Create a generator object
+        generator = generate_ai_audio_generator(transcribed_text)
+
+        # Create a StreamingHttpResponse that uses the generator object
+        response = StreamingHttpResponse(generator, content_type='application/json')
+
+        return response
+
+def generate_ai_audio_generator(transcribed_text):
+    print("started generating AI audio")
+    # Process the transcribed text and get the AI generated audio file
+    output_wav_path = TexttoAI(transcribed_text)
+    print(f"AI audio generated successfully. Path: {output_wav_path}")
+    yield json.dumps({'status': 'success', 'message': 'AI audio generated successfully.'})
+

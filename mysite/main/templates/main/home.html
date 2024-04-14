@@ -16,9 +16,17 @@ Home
             <input type="submit" value="Upload">
         </form>
         <div id="upload-status"></div>
+        <audio id="uploaded-audio" controls>
+    Your browser does not support the audio element.
+    </audio>
+    <button id="uploaded-reset-button">Reset</button>
         <p id="transcript-label" style="font-weight: bold;"></p>
         <div id="transcribed-text"></div>
         <div id="AI-audio-status"></div>
+        <audio id="ai-audio" controls>
+    Your browser does not support the audio element.
+    </audio>
+    <button id="ai-reset-button">Reset</button>
     </div>
     <div style="flex: 1; padding-left: 20px">
         <img src="https://th.bing.com/th/id/OIG1.xKpWERrcthUQ6N8iqNFx?pid=ImgGn" alt="Home Image" style="width: 100%;">
@@ -28,36 +36,90 @@ Home
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 <script>
     $('#upload-form').on('submit', function (event) {
-        event.preventDefault();
-        var formData = new FormData(this);
-        $.ajax({
-            url: '/upload_file/',
-            type: 'POST',
-            data: formData,
-            success: function (data) {
-                if (data.status === 'success') {
-                    $('#upload-status').text('File uploaded successfully. Processing...');
-                    $.ajax({
-                        url: '/process_audio/',
-                        type: 'POST',
-                        data: {'file_name': data.file_name},
-                        beforeSend: function(xhr, settings) {
-                            xhr.setRequestHeader("X-CSRFToken", getCookie('csrftoken'));
-                        },
-                        success: function (data) {
-                            if (data.status === 'success') {
+    event.preventDefault();
+    var formData = new FormData(this);
+    $.ajax({
+        url: '/upload_file/',
+        type: 'POST',
+        data: formData,
+        success: function (data) {
+            if (data.status === 'success') {
+                $('#upload-status').text('File uploaded successfully. Processing...');
+                $.ajax({
+                    url: '/process_audio/',
+                    type: 'POST',
+                    data: {'file_name': data.file_name},
+                    beforeSend: function(xhr, settings) {
+                        xhr.setRequestHeader("X-CSRFToken", getCookie('csrftoken'));
+                    },
+                    success: function (data) {
+                        if (data.status === 'success') {
+                            $('#upload-status').text('File uploaded successfully. Processing...');
+                            setTimeout(function() {
+                                var audioPath = data.file_name;
+                                console.log(audioPath);  // Log the path
+
+                                $('#uploaded-audio').attr('src', audioPath);
                                 $('#transcript-label').html('<br>Your transcript:<br>');
                                 $('#transcribed-text').text(data.transcribed_text);
                                 $('#AI-audio-status').html('<br>' + data.message + '<br>');
-                            }
+                                fetch('/generate_ai_audio/', {
+                                    method: 'POST',
+                                    headers: {
+                                        'X-CSRFToken': getCookie('csrftoken')
+                                    },
+                                    body: new URLSearchParams({
+                                        'transcribed_text': data.transcribed_text
+                                    })
+                                })
+                                .then(response => {
+                                    const reader = response.body.getReader();
+                                    return new ReadableStream({
+                                        start(controller) {
+                                            function push() {
+                                                reader.read().then(({done, value}) => {
+                                                    if (done) {
+                                                        controller.close();
+                                                        return;
+                                                    }
+                                                    controller.enqueue(value);
+                                                    push();
+                                                })
+                                            }
+                                            push();
+                                        }
+                                    });
+                                })
+                                .then(stream => {
+                                    return new Response(stream, { headers: { "Content-Type": "application/json" } }).json();
+                                })
+                                .then(result => {
+                                    $('#AI-audio-status').html('<br>' + result.message + '<br>');
+                                    $('#ai-audio').attr('src', 'ai_audio_output.wav');
+                                });
+
+                            }, 1000);
+
                         }
-                    });
-                }
-            },
-            cache: false,
-            contentType: false,
-            processData: false
-        });
+                    }
+                });
+            }
+        },
+        cache: false,
+        contentType: false,
+        processData: false
+    });
+});
+
+    $('#uploaded-reset-button').click(function() {
+        var audio = document.getElementById('uploaded-audio');
+        audio.load();  // This will reset the audio to the beginning
+    });
+
+    // Add the event listener for the reset button here
+    $('#ai-reset-button').click(function() {
+        var audio = document.getElementById('ai-audio');
+        audio.load();  // This will reset the audio to the beginning
     });
 
     function getCookie(name) {
