@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <style type="text/css">
+      /* The sidebar menu */
+      .sidenav {
+        height: 100%; /* Full-height: remove this if you want "auto" height */
+        width: 200px; /* Set the width of the sidebar */
+        position: fixed; /* Fixed Sidebar (stay in place on scroll) */
+        z-index: 1; /* Stay on top */
+        top: 0; /* Stay at the top */
+        left: 0;
+        background-color: #00008B; /* Black */
+        overflow-x: hidden; /* Disable horizontal scroll */
+        padding-top: 20px;
+      }
+
+      /* The navigation menu links */
+      .sidenav a {
+        padding: 6px 8px 6px 16px;
+        text-decoration: none;
+        font-size: 25px;
+        color: #87CEEB;
+        display: block;
+      }
+
+
+    /* CSS */
+    button, input[type="file"], input[type="reset"], #recordButton, #revealAIButton {
+      align-items: center;
+      background-image: linear-gradient(144deg,#AF40FF, #5B42F3 50%,#00DDEB);
+      border: 0;
+      border-radius: 20px;
+      box-shadow: rgba(151, 65, 252, 0.2) 0 15px 30px -5px;
+      box-sizing: border-box;
+      color: #FFFFFF;
+      display: flex;
+      font-family: Phantomsans, sans-serif;
+      font-size: 20px;
+      justify-content: center;
+      line-height: 1em;
+      max-width: 100%;
+      min-width: 60px;
+      padding: 19px 24px;
+      text-decoration: none;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: manipulation;
+      white-space: nowrap;
+      cursor: pointer;
+    }
+
+    #ai-reset-button, #uploaded-reset-button {
+      align-items: center;
+      background-image: linear-gradient(144deg, #FF7F7F, #FF6347 50%, #FF4500);
+      border: 0;
+      border-radius: 20px;
+      box-shadow: rgba(151, 65, 252, 0.2) 0 15px 30px -5px;
+      box-sizing: border-box;
+      color: #FFFFFF;
+      display: flex;
+      font-family: Phantomsans, sans-serif;
+      font-size: 20px;
+      justify-content: center;
+      line-height: 1em;
+      max-width: 100%;
+      min-width: 60px;
+      padding: 19px 24px;
+      text-decoration: none;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: manipulation;
+      white-space: nowrap;
+      cursor: pointer;
+    }
+
+    input[type="submit"], #record-submit {
+      align-items: center;
+      background-image: linear-gradient(144deg, #90ee90, #32cd32 50%, #006400);
+      border: 0;
+      border-radius: 20px;
+      box-shadow: rgba(151, 65, 252, 0.2) 0 15px 30px -5px;
+      box-sizing: border-box;
+      color: #FFFFFF;
+      display: flex;
+      font-family: Phantomsans, sans-serif;
+      font-size: 20px;
+      justify-content: center;
+      line-height: 1em;
+      max-width: 100%;
+      min-width: 60px;
+      padding: 19px 24px;
+      text-decoration: none;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: manipulation;
+      white-space: nowrap;
+      cursor: pointer;
+    }
+
+
+    button:active,
+    button:hover {
+      outline: 0;
+    }
+
+    @media (min-width: 768px) {
+    button {
+        font-size: 24px;
+        min-width: 196px;
+      }
+    }
+
+      /* When you mouse over the navigation links, change their color */
+      .sidenav a:hover {
+        color: #f1f1f1;
+      }
+
+      .form-padding {
+        padding-top: 10px;
+        padding-bottom: 10px;
+      }
+
+        .h3-padding {
+            padding-top: 10px;
+            padding-bottom: 25px;
+        }
+
+
+      /* Style page content */
+      .main {
+        margin-left: 50px; /* Same as the width of the sidebar */
+        padding: 0px 5px;
+      }
+
+      body {
+        background-image: url("https://th.bing.com/th/id/OIG2.zhcfHyeYcilvgl63reex?pid=ImgGn");
+        background-size: cover;
+        background-repeat: no-repeat;
+      }
+
+
+      /* On smaller screens, where height is less than 450px, change the style of the sidebar (less padding and a smaller font size) */
+      @media screen and (max-height: 450px) {
+        .sidenav {padding-top: 15px;}
+        .sidenav a {font-size: 18px;}
+      }
+    </style>
+    <style>
+    .h1-center {
+        text-align: center;
+        color: darkred;
+        font-weight: 825;
+    }
+    </style>
+
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+    <title>{% block title %}S2AIS{% endblock %}</title>
+</head>
+
+<body>
+  <!-- Side navigation -->
+  <div class="sidenav">
+    <a href="/record">Record Audio</a>
+    <a href="/">Upload Audio</a>
+    <a href="/view">The Vision</a>
+  </div>
+
+  <!-- Page content -->
+  <div class="main">
+    <div class="row justify-content-center">
+      <div class="col-8">
+        <h1 class="mt-2 h1-center">Crowdsourcing Large AI Voice Training & Detection Datasets</h1>
+        <hr class="mt-0 mb-4">
+        {% block content %}
+        {% endblock %}
+      </div>
+    </div>
+  </div>
+
+  </div>
+
+
+</body>
+</html>

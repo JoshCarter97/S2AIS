@@ -1,0 +1,104 @@
+{% extends 'main/base.html' %}
+{% block title %}
+{% load static %}
+Record
+{% endblock %}
+
+{% block content %}
+
+<div style="display: flex;">
+    <div>
+        <form method="POST", class="form-padding">
+            {% csrf_token %}
+            <input type="text" name="random_word" placeholder="Enter a random word">
+            <button id="record-submit" type="submit" style="margin-top: 20px; margin-bottom: 10px">Submit</button>
+        </form>
+
+        {% if prompt %}
+            <p><strong>Record yourself saying this:</strong></p>
+            <p style="color: #00008B; font-style: oblique"><strong>{{ prompt }}</strong></p>
+        {% endif %}
+
+        <div style="display: flex; align-items: center;">
+            <button id="recordButton" style="margin-right: 10px">Start Recording</button>
+            <audio id="recordedAudio" controls class="form-padding"></audio>
+        </div>
+
+        {% if image_url %}
+        <div style="display: flex; align-items: center; margin-top: 20px;">
+            <button id="revealAIButton">Reveal AI Audio</button>
+            <audio id="aiAudio" controls class="form-padding"></audio>
+        </div>
+        {% endif %}
+
+    </div>
+    <div>
+        {% if image_url %}
+            <img src="{{ image_url }}" alt="Generated image" style="width: 100%; padding-left: 35px">
+        {% endif %}
+    </div>
+</div>
+
+
+<script>
+let chunks = [];
+let recorder;
+let mediaStream;
+
+const recordButton = document.getElementById('recordButton');
+const recordedAudio = document.getElementById('recordedAudio');
+
+recordButton.addEventListener('click', function() {
+    if (recorder && recorder.state === "recording") {
+        recorder.stop();
+        recordButton.textContent = 'Start Recording';
+    } else {
+        navigator.mediaDevices.getUserMedia({ audio: true }).then(function(stream) {
+            mediaStream = stream;
+            recorder = new MediaRecorder(stream);
+            recorder.start();
+            recordButton.textContent = 'Stop Recording';
+
+            recorder.ondataavailable = function(e) {
+                chunks.push(e.data);
+            }
+
+            recorder.onstop = function(e) {
+                const blob = new Blob(chunks, { 'type' : 'audio/wav; codecs=opus' });
+                chunks = [];
+                const audioURL = window.URL.createObjectURL(blob);
+                recordedAudio.src = audioURL;
+
+                // Create a FormData object
+                let formData = new FormData();
+                // Append the audio blob to the FormData object
+                formData.append('audio', blob);
+
+                // Send the audio file to the server
+                $.ajax({
+                    url: '/save_audio/',  // Update with your server endpoint
+                    type: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function(response) {
+                        console.log(response);
+                    },
+                    error: function(error) {
+                        console.log(error);
+                    }
+                });
+            }
+        });
+    }
+});
+
+const revealAIButton = document.getElementById('revealAIButton');
+const aiAudio = document.getElementById('aiAudio');
+
+revealAIButton.addEventListener('click', function() {
+    aiAudio.src = '/media/API_ai_audio.mp3';
+});
+
+</script>
+{% endblock %}

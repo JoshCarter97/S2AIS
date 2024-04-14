@@ -1,0 +1,157 @@
+{% extends 'main/base.html' %}
+{% block title %}
+{% load static %}
+Upload
+{% endblock %}
+
+
+{% block content %}
+<div style="display: flex;">
+    <div style="flex: 1;">
+        <h3 class="h3-padding">Upload an audio file of you speaking below. This audio file will first be transcribed to text and the text
+            will then be used to generate an AI version of your audio!</h3>
+        <form id="upload-form" action="/upload/" method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <input type="file" name="audio_file">
+            <input type="submit" value="Upload" style="margin-top: 25px">
+            <h3 style="font-weight: bold; padding-top: 20px;">Pick your TTS model:</h3>
+            <select name="tts_model">
+                <option value="gpu">GPU (OpenAI API)</option>
+                <option value="cpu">CPU (Bark Model)</option>
+            </select>
+        </form>
+        <div id="upload-status"></div>
+        <h3 style="margin-top: 20px; margin-bottom: 10px">Your uploaded audio:</h3>
+        <div style="display: flex; align-items: center;">
+            <audio id="uploaded-audio" controls class="form-padding">
+                Your browser does not support the audio element.
+            </audio>
+            <button id="uploaded-reset-button" style="margin-left: 20px">Reset</button>
+        </div>
+        <p id="transcript-label" style="font-weight: bold;"></p>
+        <div id="transcribed-text"></div>
+        <div id="AI-audio-status"></div>
+        <h3 style="margin-top: 20px; margin-bottom: 10px">AI generated audio:</h3>
+        <div style="display: flex; align-items: center;">
+            <audio id="ai-audio" controls class="form-padding">
+                Your browser does not support the audio element.
+            </audio>
+            <button id="ai-reset-button" style="margin-left: 20px">Reset</button>
+        </div>
+    </div>
+    <div style="flex: 1; padding-left: 20px">
+        <img src="https://th.bing.com/th/id/OIG1.xKpWERrcthUQ6N8iqNFx?pid=ImgGn" alt="Home Image" style="width: 100%;">
+    </div>
+</div>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<script>
+    $('#upload-form').on('submit', function (event) {
+    event.preventDefault();
+    var formData = new FormData(this);
+    var tts_model = document.querySelector('select[name="tts_model"]').value;
+    console.log(tts_model);
+    formData.append('tts_model', tts_model);
+    $.ajax({
+        url: '/upload_file/',
+        type: 'POST',
+        data: formData,
+        success: function (data) {
+            if (data.status === 'success') {
+                $('#upload-status').text('File uploaded successfully. Processing...');
+                $.ajax({
+                    url: '/process_audio/',
+                    type: 'POST',
+                    data: {'file_name': data.file_name},
+                    beforeSend: function(xhr, settings) {
+                        xhr.setRequestHeader("X-CSRFToken", getCookie('csrftoken'));
+                    },
+                    success: function (data) {
+                        if (data.status === 'success') {
+                            $('#upload-status').text('File uploaded successfully. Processing...');
+                            setTimeout(function() {
+                                var audioPath = data.file_name;
+                                console.log(audioPath);  // Log the path
+
+                                $('#uploaded-audio').attr('src', '/media/' + audioPath);
+                                $('#transcript-label').html('<br><span style="font-size: 25px;">Your transcript:</span><br>');
+                                $('#transcribed-text').html('<span style="font-size: 25px; color: #00008B; font-style: oblique">' + data.transcribed_text + '</span>');
+
+                                $('#AI-audio-status').html('<br>' + data.message + '<br>');
+                                fetch('/generate_ai_audio/', {
+                                    method: 'POST',
+                                    headers: {
+                                        'X-CSRFToken': getCookie('csrftoken')
+                                    },
+                                    body: new URLSearchParams({
+                                        'transcribed_text': data.transcribed_text,
+                                        'tts_model': tts_model
+                                    })
+                                })
+                                .then(response => {
+                                    const reader = response.body.getReader();
+                                    return new ReadableStream({
+                                        start(controller) {
+                                            function push() {
+                                                reader.read().then(({done, value}) => {
+                                                    if (done) {
+                                                        controller.close();
+                                                        return;
+                                                    }
+                                                    controller.enqueue(value);
+                                                    push();
+                                                })
+                                            }
+                                            push();
+                                        }
+                                    });
+                                })
+                                .then(stream => {
+                                    return new Response(stream, { headers: { "Content-Type": "application/json" } }).json();
+                                })
+                                .then(result => {
+                                    $('#AI-audio-status').html('<br>' + result.message + '<br>');
+                                    $('#ai-audio').attr('src', '/media/ai_audio_output.wav');
+                                });
+
+                            }, 1000);
+
+                        }
+                    }
+                });
+            }
+        },
+        cache: false,
+        contentType: false,
+        processData: false
+    });
+});
+
+    $('#uploaded-reset-button').click(function() {
+        var audio = document.getElementById('uploaded-audio');
+        audio.load();  // This will reset the audio to the beginning
+    });
+
+    // Add the event listener for the reset button here
+    $('#ai-reset-button').click(function() {
+        var audio = document.getElementById('ai-audio');
+        audio.load();  // This will reset the audio to the beginning
+    });
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+</script>
+{% endblock %}
+
